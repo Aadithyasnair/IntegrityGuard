@@ -271,7 +271,7 @@ const a=document.createElement("a")
 
 a.href=URL.createObjectURL(blob)
 
-a.download="fingerprints.enc.json"
+a.download="fingerprints.igdb"
 
 a.click()
 
