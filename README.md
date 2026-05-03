@@ -1,43 +1,39 @@
 # IntegrityGuard
 
-IntegrityGuard is a browser-based cybersecurity tool that detects file tampering using cryptographic hashing.
-
-The application performs chunk-based hashing and identifies exactly which chunk of a file has been modified.
-
-The system runs completely in the browser and can be deployed using GitHub Pages.
+Cryptographic File Integrity Checker
 
 ## Features
 
-* SHA-256 file hashing
-* Chunk hashing for large files
-* Modified chunk detection
-* Chunk integrity visualization
-* IndexedDB fingerprint storage
-* Encrypted database export
-* Database import
-* PDF verification report
-* Works offline
+- SHA256 file hashing
+- Chunk hashing for large files
+- Detects exactly which chunk was modified
+- AES-256 encrypted fingerprint database
+- IndexedDB secure browser storage
+- Import / Export encrypted database
+- PDF integrity reports
+- Works fully offline
+- GitHub Pages compatible
 
-## How It Works
+## How it Works
 
-1. Upload a file.
-2. The file is split into 2MB chunks.
-3. Each chunk is hashed using SHA-256.
-4. The fingerprint is stored in the browser database.
-5. When verifying, the file is hashed again.
-6. Hashes are compared with stored hashes.
+1 Upload a file
+2 Generate fingerprint
+3 The system stores chunk hashes in IndexedDB
+4 Later upload the file again
+5 Verification compares chunk hashes
 
-If a chunk hash differs, the system identifies the exact chunk that changed.
+If hashes differ the tool shows which chunks changed.
 
-## Running the Project
+## Security
 
-Open index.html in a browser.
+Hashing: SHA-256  
+Encryption: AES-256-GCM  
+Key Derivation: PBKDF2
 
-## Technologies
+## Run Locally
 
-HTML
-CSS
-JavaScript
-Web Crypto API
-IndexedDB
-jsPDF
+Just open:
+
+index.html
+
+The app runs entirely in the browser.
