@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="UTF-8">
+<title>File Integrity Checker</title>
+
+<link rel="stylesheet" href="style.css">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+</head>
+
+<body>
+
+<h1>File Integrity Monitor</h1>
+
+<input type="file" id="fileInput">
+
+<div class="buttons">
+<button onclick="generateFingerprint()">Generate Fingerprint</button>
+<button onclick="verifyFile()">Verify Integrity</button>
+<button onclick="downloadReport()">Download PDF Report</button>
+</div>
+
+<div id="output"></div>
+
+<script src="script.js"></script>
+
+</body>
+</html>
