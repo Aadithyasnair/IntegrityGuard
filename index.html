@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
 
 <meta charset="UTF-8">
@@ -23,7 +22,7 @@
 
 <input type="file" id="fileInput">
 
-<div class="buttons">
+<div class="buttonGrid">
 
 <button onclick="generateFingerprint()">Generate Fingerprint</button>
 
@@ -33,7 +32,7 @@
 
 <label class="importBtn">
 Import DB
-<input type="file" hidden id="dbFile" onchange="importDatabase(event)">
+<input type="file" id="dbFile" hidden onchange="importDatabase(event)">
 </label>
 
 <button onclick="downloadReport()">Download PDF Report</button>
@@ -42,9 +41,7 @@ Import DB
 
 </div>
 
-<div id="output"></div>
-
-<div id="chunkMap"></div>
+<pre id="output"></pre>
 
 </div>
 
