@@ -1,91 +1,316 @@
-body{
+const CHUNK_SIZE = 1024 * 1024 * 2
 
-background:#0f172a;
-font-family:Arial;
-color:white;
-margin:0;
-display:flex;
-justify-content:center;
-align-items:center;
-height:100vh;
+let db
+let reportData = {}
 
-}
+const request = indexedDB.open("IntegrityGuardDB",1)
 
-.container{
+request.onupgradeneeded = e =>{
 
-width:600px;
-text-align:center;
+db = e.target.result
+db.createObjectStore("fingerprints",{keyPath:"name"})
 
 }
 
-h1{
+request.onsuccess = e =>{
 
-font-size:32px;
-
-}
-
-.subtitle{
-
-color:#94a3b8;
-margin-bottom:25px;
+db = e.target.result
 
 }
 
-.card{
+async function sha256(buffer){
 
-background:#1e293b;
-padding:25px;
-border-radius:10px;
-
-}
-
-input[type=file]{
-
-margin-bottom:20px;
+const hash = await crypto.subtle.digest("SHA-256",buffer)
+return Array.from(new Uint8Array(hash))
+.map(b=>b.toString(16).padStart(2,"0"))
+.join("")
 
 }
 
-.buttonGrid{
+async function chunkHashFile(file){
 
-display:grid;
-grid-template-columns:1fr 1fr;
-gap:10px;
+let chunks=[]
 
-}
+let offset=0
 
-button, .importBtn{
+while(offset<file.size){
 
-background:#2563eb;
-border:none;
-color:white;
-padding:10px;
-cursor:pointer;
-border-radius:6px;
-font-size:14px;
+const chunk=file.slice(offset,offset+CHUNK_SIZE)
+const buffer=await chunk.arrayBuffer()
 
-}
+const hash=await sha256(buffer)
 
-button:hover{
+chunks.push(hash)
 
-background:#1d4ed8;
+offset+=CHUNK_SIZE
 
 }
 
-.importBtn{
-
-display:flex;
-justify-content:center;
-align-items:center;
+return chunks
 
 }
 
-pre{
+async function generateFingerprint(){
 
-background:#020617;
-padding:15px;
-margin-top:20px;
-border-radius:8px;
-text-align:left;
-font-size:13px;
+const file=document.getElementById("fileInput").files[0]
+
+if(!file) return alert("Upload file")
+
+const chunks=await chunkHashFile(file)
+
+const tx=db.transaction(["fingerprints"],"readwrite")
+const store=tx.objectStore("fingerprints")
+
+store.put({
+
+name:file.name,
+size:file.size,
+chunks
+
+})
+
+document.getElementById("output").textContent=
+"Fingerprint created\nChunks: "+chunks.length
+
+}
+
+function getFingerprint(name){
+
+return new Promise(resolve=>{
+
+const tx=db.transaction(["fingerprints"],"readonly")
+const store=tx.objectStore("fingerprints")
+
+const req=store.get(name)
+
+req.onsuccess=()=>resolve(req.result)
+
+})
+
+}
+
+async function verifyFile(){
+
+const file=document.getElementById("fileInput").files[0]
+
+if(!file) return alert("Upload file")
+
+const stored=await getFingerprint(file.name)
+
+if(!stored) return alert("Fingerprint not found")
+
+const newChunks=await chunkHashFile(file)
+
+let changed=[]
+
+for(let i=0;i<newChunks.length;i++){
+
+if(newChunks[i]!==stored.chunks[i]){
+
+changed.push(i+1)
+
+}
+
+}
+
+let status="SAFE"
+
+if(changed.length>0) status="MODIFIED"
+
+reportData={
+
+file:file.name,
+size:file.size,
+chunks:newChunks.length,
+status,
+changed,
+time:new Date().toLocaleString()
+
+}
+
+let output=
+
+`File: ${file.name}
+
+Chunks: ${newChunks.length}
+
+Status: ${status}`
+
+if(changed.length>0){
+
+output+=`
+
+Modified chunks: ${changed.join(", ")}`
+
+}
+
+document.getElementById("output").textContent=output
+
+}
+
+async function downloadReport(){
+
+const {jsPDF}=window.jspdf
+
+const pdf=new jsPDF()
+
+pdf.text("IntegrityGuard Report",20,20)
+
+pdf.text("File: "+reportData.file,20,40)
+
+pdf.text("Size: "+reportData.size+" bytes",20,50)
+
+pdf.text("Chunks: "+reportData.chunks,20,60)
+
+pdf.text("Status: "+reportData.status,20,70)
+
+pdf.text("Time: "+reportData.time,20,80)
+
+if(reportData.changed && reportData.changed.length){
+
+pdf.text("Modified Chunks: "+reportData.changed.join(","),20,90)
+
+}
+
+pdf.save("integrity_report.pdf")
+
+}
+
+async function getKey(password){
+
+const enc=new TextEncoder()
+
+const keyMaterial=await crypto.subtle.importKey(
+"raw",
+enc.encode(password),
+"PBKDF2",
+false,
+["deriveKey"]
+)
+
+return crypto.subtle.deriveKey(
+
+{
+name:"PBKDF2",
+salt:enc.encode("integrityguard"),
+iterations:100000,
+hash:"SHA-256"
+},
+
+keyMaterial,
+{name:"AES-GCM",length:256},
+false,
+["encrypt","decrypt"]
+
+)
+
+}
+
+async function encryptData(data,password){
+
+const key=await getKey(password)
+
+const iv=crypto.getRandomValues(new Uint8Array(12))
+
+const enc=new TextEncoder()
+
+const encrypted=await crypto.subtle.encrypt(
+{name:"AES-GCM",iv},
+key,
+enc.encode(data)
+)
+
+return JSON.stringify({
+
+iv:Array.from(iv),
+data:Array.from(new Uint8Array(encrypted))
+
+})
+
+}
+
+async function decryptData(payload,password){
+
+const parsed=JSON.parse(payload)
+
+const key=await getKey(password)
+
+const iv=new Uint8Array(parsed.iv)
+const data=new Uint8Array(parsed.data)
+
+const decrypted=await crypto.subtle.decrypt(
+{name:"AES-GCM",iv},
+key,
+data
+)
+
+return new TextDecoder().decode(decrypted)
+
+}
+
+async function exportDatabase(){
+
+const password=prompt("Create password for DB export")
+
+if(!password) return
+
+const tx=db.transaction(["fingerprints"],"readonly")
+const store=tx.objectStore("fingerprints")
+
+const req=store.getAll()
+
+req.onsuccess=async()=>{
+
+const json=JSON.stringify(req.result)
+
+const encrypted=await encryptData(json,password)
+
+const blob=new Blob([encrypted],{type:"application/json"})
+
+const a=document.createElement("a")
+
+a.href=URL.createObjectURL(blob)
+
+a.download="fingerprints.enc.json"
+
+a.click()
+
+}
+
+}
+
+async function importDatabase(event){
+
+const file=event.target.files[0]
+
+if(!file) return
+
+const password=prompt("Enter database password")
+
+const text=await file.text()
+
+try{
+
+const decrypted=await decryptData(text,password)
+
+const data=JSON.parse(decrypted)
+
+const tx=db.transaction(["fingerprints"],"readwrite")
+const store=tx.objectStore("fingerprints")
+
+for(const item of data){
+
+store.put(item)
+
+}
+
+document.getElementById("output").textContent=
+"Database imported\nRecords: "+data.length
+
+}catch{
+
+alert("Invalid password or corrupted DB")
+
+}
 
 }
