@@ -1,84 +1,43 @@
-# File Integrity Checker
+# IntegrityGuard
 
-A browser-based cybersecurity tool that verifies whether a file has been modified using cryptographic hashing.
+IntegrityGuard is a browser-based cybersecurity tool that detects file tampering using cryptographic hashing.
 
-The application runs entirely in the browser and can be deployed on GitHub Pages.
+The application performs chunk-based hashing and identifies exactly which chunk of a file has been modified.
+
+The system runs completely in the browser and can be deployed using GitHub Pages.
 
 ## Features
 
-* SHA-256 cryptographic hashing
+* SHA-256 file hashing
 * Chunk hashing for large files
-* File metadata inspection
-* Integrity verification
-* PDF integrity report export
-* Local fingerprint database using localStorage
-* Works fully offline
+* Modified chunk detection
+* Chunk integrity visualization
+* IndexedDB fingerprint storage
+* Encrypted database export
+* Database import
+* PDF verification report
+* Works offline
 
 ## How It Works
 
 1. Upload a file.
-2. The system divides the file into chunks (2MB each).
+2. The file is split into 2MB chunks.
 3. Each chunk is hashed using SHA-256.
-4. The hashes are stored as the file fingerprint.
-5. When verifying, the file is chunk-hashed again.
-6. If any chunk hash changes, the file integrity fails.
+4. The fingerprint is stored in the browser database.
+5. When verifying, the file is hashed again.
+6. Hashes are compared with stored hashes.
 
-## Example
+If a chunk hash differs, the system identifies the exact chunk that changed.
 
-Original File
+## Running the Project
 
-file.txt
-Chunks: 3
-Hashes stored.
+Open index.html in a browser.
 
-Modified File
+## Technologies
 
-file.txt edited.
-
-Verification result:
-
-Integrity Status: MODIFIED
-
-## Running Locally
-
-Simply open `index.html` in a browser.
-
-## Deploying to GitHub Pages
-
-1. Create a new GitHub repository.
-2. Upload these files:
-
-   * index.html
-   * style.css
-   * script.js
-   * README.md
-3. Go to repository **Settings → Pages**.
-4. Under "Source", select:
-
-main branch
-/ (root)
-
-5. Save.
-
-Your app will be available at:
-
-https://yourusername.github.io/repository-name/
-
-## Technologies Used
-
-* HTML
-* CSS
-* JavaScript
-* Web Crypto API
-* jsPDF
-
-## Security Concept
-
-File integrity is verified using cryptographic hashes.
-If even a single byte changes, the SHA-256 hash changes, indicating tampering.
-
-Chunk hashing improves efficiency when working with very large files.
-
-## License
-
-MIT
+HTML
+CSS
+JavaScript
+Web Crypto API
+IndexedDB
+jsPDF
