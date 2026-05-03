@@ -2,8 +2,9 @@
 <html lang="en">
 
 <head>
+
 <meta charset="UTF-8">
-<title>File Integrity Checker</title>
+<title>IntegrityGuard</title>
 
 <link rel="stylesheet" href="style.css">
 
@@ -13,17 +14,39 @@
 
 <body>
 
-<h1>File Integrity Monitor</h1>
+<div class="container">
+
+<h1>IntegrityGuard</h1>
+<p class="subtitle">Cryptographic File Integrity Monitor</p>
+
+<div class="card">
 
 <input type="file" id="fileInput">
 
 <div class="buttons">
+
 <button onclick="generateFingerprint()">Generate Fingerprint</button>
-<button onclick="verifyFile()">Verify Integrity</button>
+
+<button onclick="verifyFile()">Verify File</button>
+
+<button onclick="exportDatabase()">Download Encrypted DB</button>
+
+<label class="importBtn">
+Import DB
+<input type="file" hidden id="dbFile" onchange="importDatabase(event)">
+</label>
+
 <button onclick="downloadReport()">Download PDF Report</button>
+
+</div>
+
 </div>
 
 <div id="output"></div>
+
+<div id="chunkMap"></div>
+
+</div>
 
 <script src="script.js"></script>
 
